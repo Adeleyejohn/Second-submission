@@ -1,0 +1,50 @@
+import sys
+import getpass
+import difflib
+import netmiko
+from netmiko import ConnectHandler
+from difflib import Differ
+
+
+networkinfo = {
+        "device_type": "cisco_ios",
+        "host": "192.168.56.101",
+        "username": "cisco",
+        "password": "",
+        "secret": ""
+    }
+ 
+networkinfo["username"] = input("Please enter device username: ")
+networkinfo["password"] = getpass.getpass("Please enter the device password: ")
+networkinfo["secret"] = getpass.getpass("Please enter the  device secret: ")
+user_choice = input("TELNET CONFIG  (1) or SSH OFFLINE CONFIG (2): ")
+
+if user_choice == "1":
+    session = netmiko.ConnectHandler(**networkinfo)
+    session.enable()
+   
+    running_config = session.send_command("show running-config")
+    startup_config = session.send_command("show startup-config")
+   
+    check_diff = difflib.unified_diff(running_config, startup_config)
+    for difference in check_diff:
+        print(difference)
+       
+    file = open("runfile.txt", "w")
+    file.write(running_config)
+    file.close()
+   
+elif user_choice =="2":
+    session = netmiko.ConnectHandler(**networkinfo)
+    session.enable()
+   
+    running_config_file = open("running-conf.txt", "r").readlines()
+    backup_file = open("backupfile.txt", "r").readlines()
+   
+    off_compare = difflib.unified_diff(running_config_file, backup_file)
+    for diff in off_compare:
+        print(diff)
+       
+else:
+    print("Your choice is not available!")
+    exit()
